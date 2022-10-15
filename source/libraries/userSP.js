@@ -19,6 +19,7 @@ const selectDataSP = function (spName, inputParams, outputParams) {
         //     reject(error);
         // });
 
+        // with mysql connection
         dbConfig.connection.query(finalSP, inputParams, (error, results, fields) => {
             if (error) {
                 reject(error);
