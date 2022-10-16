@@ -9,27 +9,54 @@ const selectDataSP = function (spName, inputParams, outputParams) {
     return new Promise((resolve, reject) => {
         let finalSP = `CALL ${spName}(${generateInputs(inputParams.length)})`;
 
-        // let mod = Knexx.knex.transaction(trx => {
-        //     return Knexx.knex.raw(finalSP, inputParams);
-        // });
-        // mod.then(result => {
-        //     result = result && result.length && result[0].length ? result[0][0] : [];
-        //     resolve(result);
-        // }).catch(error => {
-        //     reject(error);
-        // });
+        let mod = Knexx.knex.transaction(trx => {
+            return Knexx.knex.raw(finalSP, inputParams);
+        });
+        mod.then(result => {
+            result = result && result.length && result[0].length ? result[0][0] : [];
+            resolve(result);
+        }).catch(error => {
+            reject(error);
+        });
 
         // with mysql connection
-        dbConfig.connection.query(finalSP, inputParams, (error, results, fields) => {
-            if (error) {
-                reject(error);
-            }
-            results = results && results.length && results[0] ? results[0] : [];
-            resolve(results);
-        });
+        // dbConfig.connection.query(finalSP, inputParams, (error, results, fields) => {
+        //     if (error) {
+        //         reject(error);
+        //     }
+        //     results = results && results.length && results[0] ? results[0] : [];
+        //     resolve(results);
+        // });
     });
 }
 
+// INSERT/UPDATE data Stored Procedure
+const insertOrUpdateDataSP = function (spName, inputParams, outputParams) {
+    return new Promise((resolve, reject) => {
+        let finalSP = `CALL ${spName}(${generateInputs(inputParams.length)})`;
+
+        let mod = Knexx.knex.transaction(trx => {
+            return Knexx.knex.raw(finalSP, inputParams);
+        });
+        mod.then(result => {
+            result = result && result.length && result[0].length ? result[0][0] : [];
+            resolve(result);
+        }).catch(error => {
+            reject(error);
+        });
+
+        // with mysql connection
+        // dbConfig.connection.query(finalSP, inputParams, (error, results, fields) => {
+        //     if (error) {
+        //         reject(error);
+        //     }
+        //     results = results && results.length && results[0] ? results[0] : [];
+        //     resolve(results);
+        // });
+    });
+}
+
+// generate Inputs
 function generateInputs(num) {
     let array = [];
     for (let i = 0; i < num; i++) {
@@ -39,5 +66,6 @@ function generateInputs(num) {
 }
 
 module.exports = {
-    selectDataSP
+    selectDataSP,
+    insertOrUpdateDataSP
 }

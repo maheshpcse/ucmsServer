@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const dbConfig = require('../config/dbConfig.js');
 const authAdminCtrl = require('../controllers/authAdmin.controller');
 // const authUserCtrl = require('../controllers/authUser.controller'); // TODO
 
@@ -13,13 +14,19 @@ router.get('/', (request, response, next) => {
 });
 
 // Admin authentication routes
-router.post('/test_admin_login', authAdminCtrl.testAdminLogin);
-// router.post('/admin_login', authAdminCtrl.adminLogin);
-// router.post('/reSignIn/admin', authAdminCtrl.adminReSignin);
+router.post('/add_default_user_data', dbConfig.addDefaultUserData);
+router.post('/add_default_admin_data', dbConfig.addDefaultAdminData);
+router.post('/admin_login', authAdminCtrl.adminLogin);
+router.post('/admin_reSignin', authAdminCtrl.adminReSignin);
+router.get('/home', authAdminCtrl.validateAdminLogin, (request, response, next) => {
+    return response.status(200).send('Navigated to home page!');
+});
 
-// TODO: Employee authentication routes
+// Admin Contacts add/edit/delete routes
+
+// TODO: User authentication routes
 // router.post('/login', authUserCtrl.userLogin);
 // router.post('/signup', authUserCtrl.userSignup);
-// router.post('/reSignIn', authUserCtrl.userReSignin);
+// router.post('/reSignin', authUserCtrl.userReSignin);
 
 module.exports = router;

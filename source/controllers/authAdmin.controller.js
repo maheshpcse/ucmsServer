@@ -1,219 +1,15 @@
 const bcrypt = require('bcrypt');
 const JWT = require('jsonwebtoken');
-const cookie = require('cookie');
-const config = require('../config/serverConfig.js');
+const serverConfig = require('../config/serverConfig.js');
+const spConfig = require('../config/spConfig.js');
 const userSP = require('../libraries/userSP.js');
-const Admins = require('../models/Admin_login.model.js');
 
+// GET admin login - POST METHOD
 const adminLogin = async (request, response, next) => {
-    console.log('request body isss', request.body);
-    let adminData = {};
-    let message = '';
-    try {
-        const {
-            nameOrEmail,
-            password
-        } = request.body;
-
-        await Admins.query(request.knex)
-            .select('a.*')
-            .alias('a')
-            .whereRaw(`a.displayName = '${nameOrEmail}' OR a.email = '${nameOrEmail}'`)
-            .then(async result => {
-                console.log('Get admin login result isss', result);
-
-                if (result && result.length) {
-                    const match = await bcrypt.compare(password, result[0].password);
-                    console.log('match password isss', match);
-
-                    if (match) {
-                        adminData = Object.assign({}, result[0]);
-                        const token = JWT.sign({
-                            adminId: adminData.adminId,
-                            displayName: adminData.displayName,
-                            email: adminData.email
-                        }, config.database.securitykey, {
-                            algorithm: 'HS256',
-                            expiresIn: '1hr'
-                        });
-                        adminData['token'] = token;
-                        adminData['refreshToken'] = token;
-                        const minutes = 1440;
-                        const expTimeInMS = new Date().getTime() + (minutes * 60 * 1000);
-                        var cookieData = cookie.serialize('elmstoken', token);
-                        cookieData = cookieData.concat(';Expires=' + new Date(expTimeInMS).toUTCString() + `;HttpOnly;Secure;Path=/`);
-                        var prev = response.getHeader('set-cookie') || [];
-                        var header = Array.isArray(prev) ? prev.concat(cookieData)
-                            : Array.isArray(cookieData) ? [prev].concat(cookieData)
-                                : [prev, cookieData];
-                        console.log('final header isss:', header);
-                        response.setHeader('set-cookie', header);
-                    } else {
-                        message = 'Password is invalid';
-                        throw new Error(message);
-                    }
-                } else if (result && result.length == 0) {
-                    message = 'Username or Email ID is invalid'
-                    throw new Error(message);
-                } else {
-                    message = 'Error while generating token'
-                    throw new Error(message);
-                }
-
-            }).catch(getErr => {
-                message = message || 'Error while finding username or email id';
-                throw getErr;
-            });
-
-        return response.status(200).json({
-            success: true,
-            error: false,
-            statusCode: 200,
-            message: 'Admin login successful',
-            data: adminData
-        });
-    } catch (error) {
-        console.log('Error at try catch API result', error);
-        return response.status(200).json({
-            success: false,
-            error: true,
-            statusCode: 500,
-            message: message || 'Error at try catch API result',
-            data: []
-        });
-    }
-}
-
-const validateAdmin = async (request, response, next) => {
-    console.log('request body isss', request.headers);
-    let adminData = {};
-    let message = '';
-    try {
-        let token = request.headers['authorization'] || request.headers['x-access-token'];
-        console.log('token isss:', token);
-
-        if (!token || token === '') {
-            message = 'Token is empty';
-            throw new Error(message);
-        }
-
-        token = token.split(',')[0];
-
-        console.log('final token isss', token);
-
-        await JWT.verify(token, config.database.securitykey, async (err, decoded) => {
-            if (err) {
-                console.log('error data isss:', err);
-                message = err && err.message ? err.message : 'Error while jwt verification';
-                throw new Error(message);
-            } else {
-                console.log('decoded data isss:', decoded);
-                await Admins.query(request.knex)
-                    .select('a.*')
-                    .alias('a')
-                    .whereRaw(`a.displayName = '${decoded.displayName}'`)
-                    .then(async data => {
-                        console.log('Get admin data isss', data);
-                        adminData = data && data.length ? data[0] : {};
-                        if (adminData && Object.keys(adminData).length == 0) {
-                            message = 'Admin data not found'
-                            throw new Error(message);
-                        } else if (decoded.displayName === adminData.displayName) {
-                            next();
-                        } else {
-                            message = 'Token is invalid'
-                            throw new Error(message);
-                        }
-                    }).catch(getErr => {
-                        message = 'Error while gettign admin data';
-                        throw getErr;
-                    });
-            }
-        });
-    } catch (error) {
-        console.log('Error at try catch API result', error);
-        return response.status(200).json({
-            success: false,
-            error: true,
-            statusCode: 500,
-            message: message || 'Error at try catch API result',
-            data: []
-        });
-    }
-}
-
-const adminReSignin = async (request, response, next) => {
-    console.log('request body isss', request);
-    let adminData = {};
-    let message = '';
-    try {
-        const {
-            displayName,
-            refreshToken
-        } = request.body;
-
-        await JWT.verify(refreshToken, config.database.securitykey, (err, decoded) => {
-            if (err) {
-                console.log('Error isss:', err);
-                message = err && err['message'] ? err['message'] : 'Erroo while verifying token';
-                throw new Error(message);
-            } else {
-                console.log('decoded data isss:', decoded);
-
-                if (decoded.displayName === displayName) {
-                    adminData = Object.assign({}, decoded);
-                    const accessToken = JWT.sign({
-                        adminId: adminData.adminId,
-                        displayName: adminData.displayName,
-                        email: adminData.email
-                    }, config.database.securitykey, {
-                        algorithm: 'HS256',
-                        expiresIn: '30m'
-                    });
-                    const refreshToken = JWT.sign({
-                        adminId: adminData.adminId,
-                        displayName: adminData.displayName,
-                        email: adminData.email
-                    }, config.database.securitykey, {
-                        algorithm: 'HS256',
-                        expiresIn: '1hr'
-                    });
-                    adminData['token'] = accessToken;
-                    adminData['accessToken'] = accessToken;
-                    adminData['refreshToken'] = refreshToken;
-                    delete adminData['exp'];
-                    delete adminData['iat'];
-                } else {
-                    message = 'displayName is invalid'
-                    throw new Error(message);
-                }
-            }
-        });
-
-        return response.status(200).json({
-            success: true,
-            error: false,
-            statusCode: 200,
-            message: 'Admin reSignIn successful',
-            data: adminData
-        });
-    } catch (error) {
-        console.log('Error at try catch API result', error);
-        return response.status(200).json({
-            success: false,
-            error: true,
-            statusCode: 500,
-            message: message || 'Error at try catch API result',
-            data: []
-        });
-    }
-}
-
-// test admin login
-const testAdminLogin = async (request, response, next) => {
-    console.log('request body isss', request.body);
+    console.log('In adminLogin(), request body isss', request.body);
 
     let result = {};
+    let adminLoginData = {};
     let message = '';
 
     try {
@@ -222,19 +18,51 @@ const testAdminLogin = async (request, response, next) => {
             ip_password: request.body.password
         }
 
-        await userSP.selectDataSP('get_admin_login', [inputParams.ip_adminLoginName], null).then(resData => {
-            console.log('Get admin login data isss', resData);
+        await userSP.selectDataSP(spConfig.GET_ADMIN_LOGIN, [inputParams.ip_adminLoginName], null).then(async resData => {
+            console.log('Get admin login resData isss', resData);
 
-            result = {
-                success: true,
-                error: false,
-                statusCode: 200,
-                message: 'Admin login successful',
-                data: resData
+            if (resData && resData.length > 0) {
+                const isMatchPwd = await bcrypt.compare(request.body.password, resData[0].password);
+                console.log('is Match Password isss', isMatchPwd);
+
+                if (isMatchPwd) {
+                    adminLoginData = Object.assign({}, resData[0]);
+                    const encryptData = {
+                        admin_id: adminLoginData.admin_id,
+                        user_info_id: adminLoginData.user_info_id,
+                        adminLoginName: adminLoginData.adminLoginName,
+                        username: adminLoginData.username
+                    }
+                    const accessToken = JWT.sign(encryptData, serverConfig.database.securitykey, {
+                        algorithm: 'HS256',
+                        expiresIn: '30m'
+                    });
+                    const refreshToken = JWT.sign(encryptData, serverConfig.database.securitykey, {
+                        algorithm: 'HS256',
+                        expiresIn: '1hr'
+                    });
+                    adminLoginData['token'] = accessToken;
+                    adminLoginData['accessToken'] = accessToken;
+                    adminLoginData['refreshToken'] = refreshToken;
+                    result = {
+                        success: true,
+                        error: false,
+                        statusCode: 200,
+                        message: 'Admin login successful',
+                        data: adminLoginData
+                    }
+                } else {
+                    message = message || 'Password is invalid';
+                    throw new Error(message);
+                }
+            } else if (resData && resData.length == 0) {
+                message = message || 'AdminLoginName is invalid';
+                throw new Error(message);
             }
+
         }).catch(errData => {
-            message = message || 'Error while get admin login data';
-            throw new Error(errData);
+            message = message || 'Error while finding adminLoginName';
+            throw errData;
         });
 
     } catch (error) {
@@ -251,9 +79,137 @@ const testAdminLogin = async (request, response, next) => {
     return response.status(200).json(result);
 }
 
+// validate Admin login - POST METHOD
+const validateAdminLogin = async (request, response, next) => {
+    console.log('In validateAdmin(), request body isss', request.headers);
+
+    let adminLoginData = {};
+    let message = '';
+
+    try {
+        let authorizedToken = request.body.token || request.query.token || request.headers['authorization'] || request.headers['x-access-token'];
+        console.log('authorizedToken isss:', authorizedToken);
+
+        if (!authorizedToken || authorizedToken === '') {
+            message = 'Token is not found';
+            throw new Error(message);
+        } else {
+            authorizedToken = authorizedToken.split(',')[0];
+        }
+
+        console.log('Final authorizedToken isss', authorizedToken);
+
+        await JWT.verify(authorizedToken, serverConfig.database.securitykey, async (err, decoded) => {
+            if (err) {
+                console.log('Error jwt token verification data isss:', err);
+                message = err && err.message ? err.message : 'Error while verifying the jwt token';
+                throw new Error(message);
+            } else {
+                console.log('decoded data isss:', decoded);
+
+                await userSP.selectDataSP(spConfig.GET_ADMIN_LOGIN, [decoded.adminLoginName], null).then(async resData => {
+                    console.log('Get admin login resData isss', resData);
+                    adminLoginData = resData && resData.length ? resData[0] : {};
+                    if (adminLoginData && Object.keys(adminLoginData).length == 0) {
+                        message = message || 'Admin Login data is invalid or not found';
+                        throw new Error(message);
+                    } else if (decoded.username == adminLoginData.username) {
+                        next();
+                    } else {
+                        message = message || 'Token is invalid';
+                        throw new Error(message);
+                    }
+                }).catch(errData => {
+                    message = message || 'Error while gettign admin data';
+                    throw errData;
+                });
+            }
+        });
+    } catch (error) {
+        console.log('Error at try catch API result', error);
+        return response.status(200).json({
+            success: false,
+            error: true,
+            statusCode: 500,
+            message: message || 'Error at try catch API result',
+            data: error
+        });
+    }
+}
+
+// GET admin re-signin - POST METHOD
+const adminReSignin = async (request, response, next) => {
+    console.log('In adminReSignin(), request body isss', request.body);
+
+    let result = {};
+    let adminLoginData = {};
+    let message = '';
+
+    try {
+        const {
+            username,
+            refreshToken
+        } = request.body;
+
+        await JWT.verify(refreshToken, serverConfig.database.securitykey, (err, decoded) => {
+            if (err) {
+                console.log('Error jwt token verification data isss:', err);
+                message = err && err['message'] ? err['message'] : 'Error while verifying jwt token';
+                throw new Error(message);
+            } else {
+                console.log('decoded data isss:', decoded);
+
+                if (decoded.username === username) {
+                    adminLoginData = Object.assign({}, decoded);
+                    const encryptData = {
+                        admin_id: adminLoginData.admin_id,
+                        user_info_id: adminLoginData.user_info_id,
+                        adminLoginName: adminLoginData.adminLoginName,
+                        username: adminLoginData.username
+                    }
+                    const accessToken = JWT.sign(encryptData, serverConfig.database.securitykey, {
+                        algorithm: 'HS256',
+                        expiresIn: '30m'
+                    });
+                    const refreshToken = JWT.sign(encryptData, serverConfig.database.securitykey, {
+                        algorithm: 'HS256',
+                        expiresIn: '1hr'
+                    });
+                    adminLoginData['token'] = accessToken;
+                    adminLoginData['accessToken'] = accessToken;
+                    adminLoginData['refreshToken'] = refreshToken;
+                    delete adminLoginData['exp'];
+                    delete adminLoginData['iat'];
+
+                    result = {
+                        success: true,
+                        error: false,
+                        statusCode: 200,
+                        message: 'Admin Re-Signin successful',
+                        data: adminLoginData
+                    }
+                } else {
+                    message = message || 'Username is invalid';
+                    throw new Error(message);
+                }
+            }
+        });
+    } catch (error) {
+        console.log('Error at try catch API result', error);
+        result = {
+            success: false,
+            error: true,
+            statusCode: 500,
+            message: message || 'Error at try catch API result',
+            data: error
+        }
+    }
+
+    return response.status(200).json(result);
+}
+
 module.exports = {
     adminLogin,
-    validateAdmin,
-    adminReSignin,
-    testAdminLogin
+    validateAdminLogin,
+    adminReSignin
 }
