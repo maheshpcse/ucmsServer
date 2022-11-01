@@ -27,6 +27,7 @@ const adminLogin = async (request, response, next) => {
 
                 if (isMatchPwd) {
                     adminLoginData = Object.assign({}, resData[0]);
+
                     const encryptData = {
                         admin_id: adminLoginData.admin_id,
                         user_info_id: adminLoginData.user_info_id,
@@ -41,9 +42,11 @@ const adminLogin = async (request, response, next) => {
                         algorithm: 'HS256',
                         expiresIn: '1hr'
                     });
+
                     adminLoginData['token'] = accessToken;
                     adminLoginData['accessToken'] = accessToken;
                     adminLoginData['refreshToken'] = refreshToken;
+
                     result = {
                         success: true,
                         error: false,
@@ -64,9 +67,9 @@ const adminLogin = async (request, response, next) => {
             message = message || 'Error while finding adminLoginName';
             throw errData;
         });
-
     } catch (error) {
         console.log('Error at try catch API result', error);
+
         result = {
             success: false,
             error: true,
@@ -109,7 +112,9 @@ const validateAdminLogin = async (request, response, next) => {
 
                 await userSP.selectDataSP(spConfig.GET_ADMIN_LOGIN, [decoded.adminLoginName], null).then(async resData => {
                     console.log('Get admin login resData isss', resData);
+
                     adminLoginData = resData && resData.length ? resData[0] : {};
+
                     if (adminLoginData && Object.keys(adminLoginData).length == 0) {
                         message = message || 'Admin Login data is invalid or not found';
                         throw new Error(message);
@@ -119,6 +124,7 @@ const validateAdminLogin = async (request, response, next) => {
                         message = message || 'Token is invalid';
                         throw new Error(message);
                     }
+
                 }).catch(errData => {
                     message = message || 'Error while gettign admin data';
                     throw errData;
@@ -127,6 +133,7 @@ const validateAdminLogin = async (request, response, next) => {
         });
     } catch (error) {
         console.log('Error at try catch API result', error);
+
         return response.status(200).json({
             success: false,
             error: true,
@@ -161,6 +168,7 @@ const adminReSignin = async (request, response, next) => {
 
                 if (decoded.username === username) {
                     adminLoginData = Object.assign({}, decoded);
+
                     const encryptData = {
                         admin_id: adminLoginData.admin_id,
                         user_info_id: adminLoginData.user_info_id,
@@ -175,6 +183,7 @@ const adminReSignin = async (request, response, next) => {
                         algorithm: 'HS256',
                         expiresIn: '1hr'
                     });
+
                     adminLoginData['token'] = accessToken;
                     adminLoginData['accessToken'] = accessToken;
                     adminLoginData['refreshToken'] = refreshToken;
@@ -196,6 +205,7 @@ const adminReSignin = async (request, response, next) => {
         });
     } catch (error) {
         console.log('Error at try catch API result', error);
+        
         result = {
             success: false,
             error: true,
