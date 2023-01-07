@@ -21,6 +21,9 @@ class User_info extends Model {
                 address: { type: ['string', 'text', null] },
                 city: { type: ['string', null] },
                 state: { type: ['string', null] },
+                country: { type: ['string', null] },
+                zipcode: { type: ['string', null] },
+                profile: { type: ['string', 'json', null] },
                 role: { type: ['string', null] },                   // admin, user. Default: user
                 status: { type: ['integer', 'number', null] },      // 0-Inactive, 1-Active, 2-Blocked. Default: 1
                 created_at: { type: 'datetime' },

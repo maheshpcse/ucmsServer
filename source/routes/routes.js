@@ -14,14 +14,23 @@ router.get('/', (request, response, next) => {
     });
 });
 
+// test sp
+router.get('/test_new_sp', authAdminCtrl.testNewSp);
+
 // Admin authentication routes
 router.post('/add_default_user_data', dbConfig.addDefaultUserData);
 router.post('/add_default_admin_data', dbConfig.addDefaultAdminData);
 router.post('/admin_login', authAdminCtrl.adminLogin);
-router.post('/admin_reSignin', authAdminCtrl.adminReSignin);
+// TODO: Admin signup pending
+// TODO: Admin forgot password pending
+router.post('/admin_resignin', authAdminCtrl.adminReSignin);
 router.get('/home', authAdminCtrl.validateAdminLogin, (request, response, next) => {
     return response.status(200).send('Navigated to home page!');
 });
+router.get('/get_admin_profile_by_id/:id', authAdminCtrl.validateAdminLogin, authAdminCtrl.getAdminProfileById);
+router.put('/update_admin_profile_data/:id', authAdminCtrl.validateAdminLogin, authAdminCtrl.updateAdminProfileData);
+router.put('/update_admin_password', authAdminCtrl.validateAdminLogin, authAdminCtrl.updateAdminPassword);
+// TODO: Admin change password pending
 
 // Admin Contact Save Location add/edit/delete routes
 router.post('/add_update_contact_save_location', adminContactsCtrl.addOrUpdateContactSaveLocation);

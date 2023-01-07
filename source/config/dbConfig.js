@@ -99,7 +99,7 @@ const addDefaultAdminData = async (request, response, next) => {
     try {
         const defaultAdminData = [null, 1, 'master', '1234', null, 1, new Date(), new Date()];
 
-        // hash and encrypt employee password
+        // hash and encrypt admin password
         await bcrypt.hash(defaultAdminData[3], 10).then(async hash => {
             console.log('hash password isss:', hash);
             defaultAdminData[3] = hash;

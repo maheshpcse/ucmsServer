@@ -1,6 +1,7 @@
 'use strict';
 
 // required npm modules
+// require('./config/dbBackup.js');
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
@@ -20,6 +21,7 @@ const app = express();
 
 // required middlewares
 app.use(express.static(path.join(__dirname, '../public')));
+app.use("/uploads", express.static(path.join('uploads')));
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
@@ -41,7 +43,7 @@ app.get('/test_db_connection', dbConfig.checkDatabaseConnection);
 app.use('/api', routes);
 
 app.listen(serverConfig.server.port, () => {
-    console.log(`User Contact Management System server is listening on http://localhost:${serverConfig.server.port}`);
+    console.log(`User Contact Management System server is listening on http://${serverConfig.server.host}:${serverConfig.server.port}`);
 });
 
 module.exports = app;
