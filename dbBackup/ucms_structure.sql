@@ -94,6 +94,11 @@
 -- ----- Fifth Table Name : contact_groups_linking
 -- ---- Required Columns :
 
+-- table: admin_settings_log
+
+-- columns: 
+-- setting_log_id, admin_id, setting_name, setting_detail, request_info, log_time, response_time, status, created_at, updated_at
+
 -- ----------------- DATABASE STRUCTURE ENDS ---------------------
 
 -- TODO: ucms database backup

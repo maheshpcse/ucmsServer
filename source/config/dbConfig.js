@@ -50,31 +50,30 @@ const checkDatabaseConnection = async (request, response, next) => {
     });
 }
 
-// add default user data - POST METHOD
-const addDefaultUserData = async (request, response, next) => {
-    console.log('In addDefaultUserData(), request body isss', request.body);
+// add default user info data - POST METHOD
+const addDefaultUserInfoData = async (request, response, next) => {
+    console.log('In addDefaultUserInfoData(), request body isss', request.body);
 
     let result = {};
     let message = '';
 
     try {
-        const defaultUserData = [null, 'test master', 'master', 'master123@gmail.com', '9876543210', '8th block, koramangala', 'Bengaluru', 'Karnataka', 'admin', 1, new Date(), new Date()];
+        const defaultUserInfoData = [null, 'test master', 'master', 'master123@gmail.com', '9876543210', '8th block, koramangala', 'Bengaluru', 'Karnataka', 'admin', 1, new Date(), new Date()];
         
-        await userSP.insertOrUpdateDataSP(spConfig.ADD_DEFAULT_USER_DATA, defaultUserData, null).then(resData => {
-            console.log('Get added default user resData isss', resData);
+        await userSP.insertOrUpdateDataSP(spConfig.ADD_DEFAULT_USER_INFO_DATA, defaultUserInfoData, null).then(resData => {
+            console.log('Get added default user info resData isss', resData);
 
             result = {
                 success: true,
                 error: false,
                 statusCode: 200,
-                message: 'Default user data is added successful',
+                message: 'Default user info data is added successful',
                 data: resData
             }
         }).catch(errData => {
-            message = message || 'Error while adding default user data';
+            message = message || 'Error while adding default user info data';
             throw errData;
         });
-        
     } catch (error) {
         console.log('Error at try catch API result', error);
         result = {
@@ -89,40 +88,86 @@ const addDefaultUserData = async (request, response, next) => {
     return response.status(200).json(result);
 }
 
-// add default admin data - POST METHOD
-const addDefaultAdminData = async (request, response, next) => {
-    console.log('In addDefaultAdminData(), request body isss', request.body);
+// add default admin login data - POST METHOD
+const addDefaultAdminLoginData = async (request, response, next) => {
+    console.log('In addDefaultAdminLoginData(), request body isss', request.body);
 
     let result = {};
     let message = '';
 
     try {
-        const defaultAdminData = [null, 1, 'master', '1234', null, 1, new Date(), new Date()];
+        const defaultAdminLoginData = [null, 1, 'master', '1234', null, 1, new Date(), new Date()];
 
         // hash and encrypt admin password
-        await bcrypt.hash(defaultAdminData[3], 10).then(async hash => {
+        await bcrypt.hash(defaultAdminLoginData[3], 10).then(async hash => {
             console.log('hash password isss:', hash);
-            defaultAdminData[3] = hash;
+            defaultAdminLoginData[3] = hash;
         }).catch(hashErr => {
             message = 'Error while encrypt the password';
             throw hashErr;
         });
         
-        await userSP.insertOrUpdateDataSP(spConfig.ADD_DEFAULT_ADMIN_DATA, defaultAdminData, null).then(resData => {
-            console.log('Get added default admin resData isss', resData);
+        await userSP.insertOrUpdateDataSP(spConfig.ADD_DEFAULT_ADMIN_LOGIN_DATA, defaultAdminLoginData, null).then(resData => {
+            console.log('Get added default admin login resData isss', resData);
 
             result = {
                 success: true,
                 error: false,
                 statusCode: 200,
-                message: 'Default admin data is added successful',
+                message: 'Default admin login data is added successful',
                 data: resData
             }
         }).catch(errData => {
-            message = message || 'Error while adding default admin data';
+            message = message || 'Error while adding default admin login data';
             throw errData;
         });
+    } catch (error) {
+        console.log('Error at try catch API result', error);
+        result = {
+            success: false,
+            error: true,
+            statusCode: 500,
+            message: message || 'Error at try catch API result',
+            data: error
+        }
+    }
+
+    return response.status(200).json(result);
+}
+
+// add default admin settings login data - POST METHOD
+const addDefaultAdminSettingsLoginData = async (request, response, next) => {
+    console.log('In addDefaultAdminSettingsLoginData(), request body isss', request.body);
+
+    let result = {};
+    let message = '';
+
+    try {
+        const defaultAdminSettingsLoginData = [null, 1, 'master', '1234', 0, null, 1, new Date(), new Date()];
+
+        // hash and encrypt admin password
+        await bcrypt.hash(defaultAdminSettingsLoginData[3], 10).then(async hash => {
+            console.log('hash password isss:', hash);
+            defaultAdminSettingsLoginData[3] = hash;
+        }).catch(hashErr => {
+            message = 'Error while encrypt the password';
+            throw hashErr;
+        });
         
+        await userSP.insertOrUpdateDataSP(spConfig.ADD_DEFAULT_ADMIN_SETTINGS_LOGIN_DATA, defaultAdminSettingsLoginData, null).then(resData => {
+            console.log('Get added default admin settings login resData isss', resData);
+
+            result = {
+                success: true,
+                error: false,
+                statusCode: 200,
+                message: 'Default admin settings login data is added successful',
+                data: resData
+            }
+        }).catch(errData => {
+            message = message || 'Error while adding default admin settings login data';
+            throw errData;
+        });
     } catch (error) {
         console.log('Error at try catch API result', error);
         result = {
@@ -140,6 +185,7 @@ const addDefaultAdminData = async (request, response, next) => {
 module.exports = {
     connection,
     checkDatabaseConnection,
-    addDefaultUserData,
-    addDefaultAdminData
+    addDefaultUserInfoData,
+    addDefaultAdminLoginData,
+    addDefaultAdminSettingsLoginData
 };

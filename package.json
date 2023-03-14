@@ -46,6 +46,7 @@
     "objection": "^2.2.18",
     "path": "^0.12.7",
     "randomstring": "^1.2.2",
+    "time-convert": "0.0.2",
     "underscore": "^1.13.1"
   }
 }
